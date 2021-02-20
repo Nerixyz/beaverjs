@@ -1,0 +1,15 @@
+{
+  "compilerOptions": {
+    "module": "ES2020",
+    "target": "es2019",
+    "lib": ["ES2019", "DOM"],
+    "sourceMap": true,
+    "declaration": true,
+    "outDir": "dist",
+    "rootDir": "src",
+    "strict": true
+  },
+  "exclude": [
+    "node_modules"
+  ]
+}
