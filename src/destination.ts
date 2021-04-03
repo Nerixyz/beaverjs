@@ -5,7 +5,7 @@ export enum Destination {
   Context = 0b001,
   Content = 0b010,
   Background = 0b100,
-  Passthrough = 0b001 | 0b010 | 0b100
+  Passthrough = 0b001 | 0b010 | 0b100,
 }
 
 export function isContext(dst: number | Destination) {
