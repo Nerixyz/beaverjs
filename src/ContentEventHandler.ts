@@ -3,8 +3,12 @@ import { InternalMessage, InternalMessageData, StructuredCloneData } from './typ
 import { Destination, isBackground, isContent, isContext, isWorker } from './destination';
 import { listen } from './listeners';
 
-export class ContentEventHandler<EventMap extends Record<string, StructuredCloneData>> extends BaseEventHandler<EventMap, InternalMessageData, [Destination | undefined]> {
-
+export class ContentEventHandler<EventMap extends Record<string, StructuredCloneData>> extends BaseEventHandler<
+  EventMap,
+  InternalMessageData,
+  [Destination | undefined],
+  undefined
+> {
   emitBackground<K extends keyof EventMap>(key: K, data: EventMap[K]) {
     return this.emit(key, data, Destination.Background);
   }
@@ -15,7 +19,7 @@ export class ContentEventHandler<EventMap extends Record<string, StructuredClone
 
   protected sendEvent(serialized: InternalMessageData, destination?: Destination): void {
     destination ??= Destination.Passthrough;
-    if (isContext(destination) || isContent(destination) && isWorker(destination)) {
+    if (isContext(destination) || (isContent(destination) && isWorker(destination))) {
       postMessage({ destination, data: serialized } as InternalMessage, '*');
     }
     if (isBackground(destination) && globalThis.browser) {
@@ -27,17 +31,17 @@ export class ContentEventHandler<EventMap extends Record<string, StructuredClone
     return { data, event: type as string };
   }
 
-  protected deserialize<K extends keyof EventMap>(serialized: InternalMessageData): { type: K; data: EventMap[K]; } {
+  protected deserialize<K extends keyof EventMap>(serialized: InternalMessageData): { type: K; data: EventMap[K] } {
     return { data: serialized.data as EventMap[K], type: serialized.event as any };
   }
 
   protected setup(): void {
-    listen({
+    listen<undefined /* TODO */>({
       thisActor: 'content',
       listenFrom: new Set(['background', 'context']),
-      onMessage: msg => {
-        this.handleSerialized(msg.data);
-      }
-    })
+      onMessage: (msg, sender) => {
+        this.handleSerialized(msg.data, sender);
+      },
+    });
   }
 }

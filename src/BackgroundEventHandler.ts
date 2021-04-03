@@ -3,9 +3,14 @@ import { BaseEventHandler } from './BaseEventHandler';
 import { Destination } from './destination';
 import { listen } from './listeners';
 import _QueryQueryInfo = browser.tabs._QueryQueryInfo;
+import MessageSender = browser.runtime.MessageSender;
 
-export class BackgroundEventHandler<EventMap extends Record<string, StructuredCloneData>> extends BaseEventHandler<EventMap, InternalMessageData, [Destination | undefined]> {
-
+export class BackgroundEventHandler<EventMap extends Record<string, StructuredCloneData>> extends BaseEventHandler<
+  EventMap,
+  InternalMessageData,
+  [Destination | undefined],
+  MessageSender
+> {
   constructor(private query: _QueryQueryInfo = {}) {
     super();
   }
@@ -27,23 +32,21 @@ export class BackgroundEventHandler<EventMap extends Record<string, StructuredCl
     return { data, event: type as string };
   }
 
-  protected deserialize<K extends keyof EventMap>(serialized: InternalMessageData): { type: K; data: EventMap[K]; } {
+  protected deserialize<K extends keyof EventMap>(serialized: InternalMessageData): { type: K; data: EventMap[K] } {
     return { data: serialized.data as EventMap[K], type: serialized.event as any };
   }
 
   protected setup(): void {
-    listen({
+    listen<MessageSender>({
       thisActor: 'background',
       listenFrom: new Set(['content']),
-      onMessage: msg => {
-        this.handleSerialized(msg.data);
-      }
+      onMessage: (msg, sender) => {
+        this.handleSerialized(msg.data, sender);
+      },
     });
   }
 }
 
 function sendToAllTabs(query: _QueryQueryInfo, msg: InternalMessage) {
-  return browser.tabs.query(query)
-    .then(tabs => tabs
-      .forEach(tab => browser.tabs.sendMessage(tab.id ?? -1, msg)));
+  return browser.tabs.query(query).then(tabs => tabs.forEach(tab => browser.tabs.sendMessage(tab.id ?? -1, msg)));
 }
