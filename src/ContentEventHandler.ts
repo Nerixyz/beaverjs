@@ -3,12 +3,19 @@ import { InternalMessage, InternalMessageData, StructuredCloneData } from './typ
 import { Destination, isBackground, isContent, isContext, isWorker } from './destination';
 import { listen } from './listeners';
 
+type ListenFrom = Array<'context' | 'background'>;
 export class ContentEventHandler<EventMap extends Record<string, StructuredCloneData>> extends BaseEventHandler<
   EventMap,
   InternalMessageData,
   [Destination | undefined],
   undefined
 > {
+  private listenFrom: ListenFrom;
+  constructor(listenFrom: ListenFrom = ['context', 'background']) {
+    super();
+    this.listenFrom = listenFrom;
+  }
+
   emitBackground<K extends keyof EventMap>(key: K, data: EventMap[K]) {
     return this.emit(key, data, Destination.Background);
   }
@@ -38,7 +45,7 @@ export class ContentEventHandler<EventMap extends Record<string, StructuredClone
   protected setup(): void {
     listen<undefined /* TODO */>({
       thisActor: 'content',
-      listenFrom: new Set(['background', 'context']),
+      listenFrom: new Set(this.listenFrom),
       onMessage: (msg, sender) => {
         this.handleSerialized(msg.data, sender);
       },
