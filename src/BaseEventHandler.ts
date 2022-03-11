@@ -14,7 +14,7 @@ export abstract class BaseEventHandler<
   protected eventMap = new Map<keyof EventMap, ArrayOrSingle<EventEntry<Sender, EventMap[keyof EventMap]>>>();
 
   constructor() {
-    this.setup();
+    queueMicrotask(() => this.setup());
   }
 
   protected abstract serialize<K extends keyof EventMap>(type: K, data: EventMap[K]): SerializedEvent;
